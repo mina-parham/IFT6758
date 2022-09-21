@@ -7,6 +7,7 @@ comfortable with pivoting DataFrames to accomplish your objectives.
 
 All areas which require work are marked with a "TODO" flag.
 """
+from unicodedata import name
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
@@ -35,8 +36,19 @@ def pivot_months_pandas(data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]
     decimal place.
     """
     monthly, counts = None, None
+    data['month'] = data['date'].apply(date_to_month)
+
+
 
     # TODO
+    monthly = data.groupby(['name', 'month']).agg({'precipitation':'sum'}).reset_index()
+    counts = data.groupby(['name', 'month']).size().reset_index(name='counts')
+
+    monthly = monthly.pivot(index='name', columns='month', values='precipitation')
+    counts = counts.pivot(index='name', columns='month', values='counts') 
+
+
+
 
     return monthly, counts
 
@@ -117,10 +129,14 @@ def compute_pairwise(df: pd.DataFrame, func: callable) -> pd.DataFrame:
     CALGARY INTL A           ...        ...
     ```
     """
-    new_df = None
+    new_df =  df
 
     # TODO
     # use scipy.spatial.pdist and scipy.spatial.squareform
+    new_df =  pdist(new_df, func)
+    new_df = squareform(new_df)
+
+
 
     return new_df
 
@@ -145,9 +161,10 @@ def compute_pairwise_distances(df: pd.DataFrame) -> pd.DataFrame:
     distance between each of the stations. The input should be the original raw dataframe loaded
     from the CSV.
     """
-    new_df = None
+    new_df = df[['name', 'latitude', 'longitude']].drop_duplicates().set_index(['name'])
 
     # TODO: pivot the dataframe so that you have lat/lon as the columns, and names as the index
+    new_df = compute_pairwise(new_df, geodesic)
 
     return new_df
 
@@ -169,9 +186,22 @@ def correlation(u, v) -> float:
     idx_v = ~pd.isna(v)
     idx = idx_u & idx_v
 
+    # mean_x, mean_y  = sum(x) / len(x), sum(y) / len(y)
+    #         cov   = sum([(a - mean_x) * (b - mean_y) for a, b in zip(x, y)])
+    #         var_x = sum([(a - mean_x) ** 2 for a in x])
+    #         var_y = sum([(b - mean_y) ** 2 for b in y])
+    #         return (cov / math.sqrt(var_x)) / math.sqrt(var_y)
+
     # TODO: compute mean and std of valid entries
+    mean_u = u[idx].mean()
+    mean_v = v[idx].mean()
+    std_u = u[idx].std()
+    std_v = v[idx].std()
+
+
 
     # TODO: compute correlation
+    corr = ((u[idx] - mean_u) * (v[idx] - mean_v)).mean() / (std_u * std_v)
 
     return corr
 
@@ -188,10 +218,12 @@ def compute_pairwise_correlation(df: pd.DataFrame) -> pd.DataFrame:
     for the purposes of this assignment. `pdist` expects the metric function to be a proper metric,
     i.e. the distance between an element to itself is zero.
     """
-    new_df = None
+    new_df = df[['name', 'date', 'precipitation']]
 
     # TODO: pivot the dataframe so that you have one column for each date, and the station names
     # are the index
+    new_df = new_df.pivot(index='name', columns='date', values='precipitation')
+    new_df = compute_pairwise(new_df, correlation)
 
     return new_df
 
@@ -208,9 +240,12 @@ def compute_pairwise_correlation_pandas(df: pd.DataFrame) -> pd.DataFrame:
     You should get the same result as what you got for `compute_pairwise_correlation()`, with
     the exception of ones (correctly) along the diagonal.
     """
-    new_df = None
+    new_df = df[['name', 'date', 'precipitation']]
 
     # TODO
+    new_df = new_df.pivot(index='date', columns='name', values='precipitation')
+    new_df = new_df.corr()
+
 
     return new_df
 
@@ -218,11 +253,10 @@ def compute_pairwise_correlation_pandas(df: pd.DataFrame) -> pd.DataFrame:
 def main():
     data = get_precip_data()
     totals, counts = pivot_months_loops(data)
-
-    # optionally create the data... 
-    #totals.to_csv("data/totals.csv")
-    #counts.to_csv("data/counts.csv")
-    #np.savez("data/monthdata.npz", totals=totals.values, counts=counts.values)
+    #optionally create the data... 
+    totals.to_csv("data/totals.csv")
+    counts.to_csv("data/counts.csv")
+    np.savez("data/monthdata.npz", totals=totals.values, counts=counts.values)
 
     # pivot monthspandas
     totals_pd, counts_pd = pivot_months_pandas(data)

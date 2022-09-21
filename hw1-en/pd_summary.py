@@ -12,9 +12,10 @@ def city_lowest_precipitation(totals: pd.DataFrame) -> str:
     particular year, return the city with the lowest total precipitation.
     """
 
-    # TODO
+    # TODO 
+    
 
-    return None
+    return totals.sum(axis=1).argmin()
 
 
 def avg_precipitation_month(totals: pd.DataFrame, counts: pd.DataFrame) -> pd.DataFrame:
@@ -25,7 +26,7 @@ def avg_precipitation_month(totals: pd.DataFrame, counts: pd.DataFrame) -> pd.Da
 
     # TODO
 
-    return None
+    return totals.sum(axis=0)/ counts.sum(axis=0)
 
 
 def avg_precipitation_city(totals: pd.DataFrame, counts: pd.DataFrame) -> pd.DataFrame:
@@ -36,7 +37,7 @@ def avg_precipitation_city(totals: pd.DataFrame, counts: pd.DataFrame) -> pd.Dat
 
     # TODO
 
-    return None
+    return totals.sum(axis=1) / counts.sum(axis=1)
 
 
 # no quarterly as this is a bit of a pain

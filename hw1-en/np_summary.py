@@ -14,7 +14,7 @@ def city_lowest_precipitation(totals: np.array) -> int:
 
     # TODO
 
-    return None
+    return totals.sum(axis=1).argmin()
 
 
 def avg_precipitation_month(totals: np.array, counts: np.array) -> np.array:
@@ -25,7 +25,7 @@ def avg_precipitation_month(totals: np.array, counts: np.array) -> np.array:
 
     # TODO
 
-    return None
+    return totals.sum(axis=0)/ counts.sum(axis=0)
 
 
 def avg_precipitation_city(totals: np.array, counts: np.array) -> np.array:
@@ -36,7 +36,8 @@ def avg_precipitation_city(totals: np.array, counts: np.array) -> np.array:
 
     # TODO
 
-    return None
+
+    return totals.sum(axis=1) / counts.sum(axis=1)
 
 
 def quarterly_precipitation(totals: np.array) -> np.array:
@@ -50,8 +51,11 @@ def quarterly_precipitation(totals: np.array) -> np.array:
         raise NotImplementedError("Input array does not have 12 months!")
 
     # TODO
+    totals_reshape = totals.reshape(totals.shape[0],4,-1)
+    
+    
 
-    return None
+    return totals_reshape.sum(axis=2)
 
 
 def main():
