@@ -13,9 +13,9 @@ def city_lowest_precipitation(totals: np.array) -> int:
     """
 
     # TODO
+    index = np.sum(totals, axis=1)  
 
-    return totals.sum(axis=1).argmin()
-
+    return np.argmin(index)
 
 def avg_precipitation_month(totals: np.array, counts: np.array) -> np.array:
     """

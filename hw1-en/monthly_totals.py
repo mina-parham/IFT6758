@@ -7,6 +7,7 @@ comfortable with pivoting DataFrames to accomplish your objectives.
 
 All areas which require work are marked with a "TODO" flag.
 """
+from doctest import DocFileSuite
 from unicodedata import name
 import numpy as np
 import pandas as pd
@@ -129,13 +130,10 @@ def compute_pairwise(df: pd.DataFrame, func: callable) -> pd.DataFrame:
     CALGARY INTL A           ...        ...
     ```
     """
-    new_df =  df
-
+    new_df =  pdist(df, func)
     # TODO
     # use scipy.spatial.pdist and scipy.spatial.squareform
-    new_df =  pdist(new_df, func)
     new_df = squareform(new_df)
-
 
 
     return new_df
@@ -161,14 +159,21 @@ def compute_pairwise_distances(df: pd.DataFrame) -> pd.DataFrame:
     distance between each of the stations. The input should be the original raw dataframe loaded
     from the CSV.
     """
-    new_df = df[['name', 'latitude', 'longitude']].drop_duplicates().set_index(['name'])
+
+
+
+    df['month'] = df['date'].apply(date_to_month)
+    df_new = df.pivot_table(index='name', columns='month', values=['latitude', 'longitude'])
+
+    new_df_new = df_new.T.groupby(level=0).first().T
 
     # TODO: pivot the dataframe so that you have lat/lon as the columns, and names as the index
-    new_df = compute_pairwise(new_df, geodesic)
+    new_df = compute_pairwise(new_df_new, geodesic)
+    new_df = pd.DataFrame(new_df, columns=list(df_new.index), index = df_new.index)
 
     return new_df
 
-
+#reference: I discuss with Anshita Saxna to solve this question
 def correlation(u, v) -> float:
     """
     Compute the correlation between two sets of data
@@ -186,19 +191,11 @@ def correlation(u, v) -> float:
     idx_v = ~pd.isna(v)
     idx = idx_u & idx_v
 
-    # mean_x, mean_y  = sum(x) / len(x), sum(y) / len(y)
-    #         cov   = sum([(a - mean_x) * (b - mean_y) for a, b in zip(x, y)])
-    #         var_x = sum([(a - mean_x) ** 2 for a in x])
-    #         var_y = sum([(b - mean_y) ** 2 for b in y])
-    #         return (cov / math.sqrt(var_x)) / math.sqrt(var_y)
-
     # TODO: compute mean and std of valid entries
-    mean_u = u[idx].mean()
-    mean_v = v[idx].mean()
-    std_u = u[idx].std()
-    std_v = v[idx].std()
-
-
+    mean_u = np.mean(u[idx])
+    mean_v = np.mean(v[idx])
+    std_u = np.std(u[idx])
+    std_v = np.std(v[idx])
 
     # TODO: compute correlation
     corr = ((u[idx] - mean_u) * (v[idx] - mean_v)).mean() / (std_u * std_v)
@@ -218,12 +215,24 @@ def compute_pairwise_correlation(df: pd.DataFrame) -> pd.DataFrame:
     for the purposes of this assignment. `pdist` expects the metric function to be a proper metric,
     i.e. the distance between an element to itself is zero.
     """
-    new_df = df[['name', 'date', 'precipitation']]
+
+    #piv_df = new_df.pivot_table(index='name', columns='date', values=['precipitation'])
+    #new_df = compute_pairwise(piv_df, correlation)
+    #new_df = pd.DataFrame(new_df, columns=list(piv_df.index), index=piv_df.index)
+    # TODO: pivot the dataframe so that you have one column for each date, and the station names
+    # are the index
+
+    #return new_df
+
 
     # TODO: pivot the dataframe so that you have one column for each date, and the station names
     # are the index
-    new_df = new_df.pivot(index='name', columns='date', values='precipitation')
-    new_df = compute_pairwise(new_df, correlation)
+
+    new_df=df.copy()
+    df_new = new_df.pivot(index='name', columns='date', values=['precipitation'])
+    new_df = compute_pairwise(df_new, correlation)
+    new_df = pd.DataFrame(new_df, columns=list(df_new.index), index=df_new.index)
+
 
     return new_df
 
@@ -240,11 +249,10 @@ def compute_pairwise_correlation_pandas(df: pd.DataFrame) -> pd.DataFrame:
     You should get the same result as what you got for `compute_pairwise_correlation()`, with
     the exception of ones (correctly) along the diagonal.
     """
-    new_df = df[['name', 'date', 'precipitation']]
-
+    new_df = df.copy()
     # TODO
-    new_df = new_df.pivot(index='date', columns='name', values='precipitation')
-    new_df = new_df.corr()
+    new_df = new_df.pivot(index='name', columns='date', values=['precipitation'])
+    new_df = new_df.corr(method='pearson')
 
 
     return new_df
@@ -254,9 +262,9 @@ def main():
     data = get_precip_data()
     totals, counts = pivot_months_loops(data)
     #optionally create the data... 
-    totals.to_csv("data/totals.csv")
-    counts.to_csv("data/counts.csv")
-    np.savez("data/monthdata.npz", totals=totals.values, counts=counts.values)
+    # totals.to_csv("data/totals.csv")
+    # counts.to_csv("data/counts.csv")
+    # np.savez("data/monthdata.npz", totals=totals.values, counts=counts.values)
 
     # pivot monthspandas
     totals_pd, counts_pd = pivot_months_pandas(data)
@@ -280,10 +288,10 @@ def main():
     # pairwise correlation
     print(compute_pairwise_correlation(data))
 
-    # pairwise correlation
+    # # pairwise correlation
     print(compute_pairwise_correlation_pandas(data))
 
-    print("Done!")
+    # print("Done!")
 
 
 if __name__ == "__main__":

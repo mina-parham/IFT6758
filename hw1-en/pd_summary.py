@@ -14,8 +14,9 @@ def city_lowest_precipitation(totals: pd.DataFrame) -> str:
 
     # TODO 
     
+    index =totals.sum(axis=1)
 
-    return totals.sum(axis=1).argmin()
+    return index.idxmin(axis=0)
 
 
 def avg_precipitation_month(totals: pd.DataFrame, counts: pd.DataFrame) -> pd.DataFrame:
